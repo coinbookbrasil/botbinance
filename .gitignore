@@ -350,8 +350,6 @@ api-keys.json
 !live_configs/bybit_default.json
 live_configs/*
 update.sh
-ghostnetrn
-ghostnetrn.pub
 master.zip
 
 # Reports

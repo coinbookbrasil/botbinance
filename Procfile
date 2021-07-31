@@ -1,0 +1,1 @@
+worker: python3 start_bot.py binance_01 HBARUSDT configs/live/binance_hbarusdt.json

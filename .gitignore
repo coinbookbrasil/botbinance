@@ -349,6 +349,7 @@ api-keys.json
 !live_configs/binance_default.json
 !live_configs/bybit_default.json
 live_configs/*
+update.sh
 
 # Reports
 reports/*

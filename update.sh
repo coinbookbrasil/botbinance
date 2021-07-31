@@ -1,6 +1,6 @@
 wget -N https://github.com/enarjord/passivbot/archive/refs/heads/master.zip
 #unzip master.zip -o -x passivbot-master/api-keys.json  
-unzip master.zip -o
+unzip -o master.zip
 cp -r passivbot-master/* .
 git add .
 #git remote set-url origin git@github.com:ghostnetrn/botbinance.git

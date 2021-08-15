@@ -1,3 +1,4 @@
+rm -r passivbot-master/
 wget -N https://github.com/enarjord/passivbot/archive/refs/heads/master.zip
 #unzip master.zip -o -x passivbot-master/api-keys.json  
 unzip -o master.zip -x passivbot-master/README.md

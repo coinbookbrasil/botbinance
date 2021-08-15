@@ -4,13 +4,15 @@ from backtest import backtest
 from plotting import plot_fills
 from downloader import Downloader, prep_config
 from pure_funcs import denumpyize, numpyize, get_template_live_config, candidate_to_live_config, calc_spans, \
-    get_template_live_config, unpack_config, pack_config, analyze_fills, ts_to_date, denanify, round_dynamic
+    get_template_live_config, unpack_config, pack_config, analyze_fills, ts_to_date, denanify, round_dynamic, \
+    tuplify
 from procedures import dump_live_config, load_live_config, make_get_filepath, add_argparse_args, get_starting_configs
 from time import time, sleep
-from optimize import get_expanded_ranges, single_sliding_window_run
-from bisect import insort
+from optimize import get_expanded_ranges, single_sliding_window_run, objective_function
+from bisect import bisect
 from typing import Callable
 from prettytable import PrettyTable
+from hashlib import sha256
 import os
 import sys
 import argparse
@@ -38,6 +40,19 @@ def pso_multiprocess(reward_func: Callable,
     if len(initial_positions) <= n_particles: use initial positions as particles, let remainder be random
     else: let n_particles = len(initial_positions)
     '''
+
+    def get_new_velocity_and_position(velocity, position, lbest_, gbest_) -> (np.ndarray, np.ndarray):
+
+        new_velocity = (
+            w * velocity
+            + c1 * np.random.random(velocity.shape) * (lbest_ - position)
+            + c2 * np.random.random(velocity.shape) * (gbest_ - position)
+        )
+        new_position = position + lr * new_velocity
+        new_position = np.where(new_position > bounds[0], new_position, bounds[0])
+        new_position = np.where(new_position < bounds[1], new_position, bounds[1])
+        return new_velocity, new_position
+
     if len(initial_positions) > n_particles:
         positions = numpyize(initial_positions)
     else:
@@ -48,12 +63,15 @@ def pso_multiprocess(reward_func: Callable,
             positions[:len(initial_positions)] = initial_positions[:len(positions)]
     positions = np.where(positions > bounds[0], positions, bounds[0])
     positions = np.where(positions < bounds[1], positions, bounds[1])
-    velocities = np.zeros_like(positions)
+    # velocities = np.zeros_like(positions)
+    velocities = (np.random.random(positions.shape) - 0.5) * 0.0001  # init velocities to small random number
     lbests = np.zeros_like(positions)
     lbest_scores = np.zeros(len(positions))
     lbest_scores[:] = np.inf
     gbest = np.zeros_like(positions[0])
     gbest_score = np.inf
+
+    tested = set()
 
     itr_counter = 0
     worker_cycler = 0
@@ -70,6 +88,25 @@ def pso_multiprocess(reward_func: Callable,
         else:
             if workers[worker_cycler] is None:
                 if pos_cycler not in working:
+                    pos_hash = sha256(str(positions[pos_cycler]).encode('utf-8')).hexdigest()
+                    for _ in range(100):
+                        if pos_hash not in tested:
+                            break
+                        print('debug duplicate candidate')
+                        print('pos', positions[pos_cycler])
+                        print('vel', velocities[pos_cycler])
+                        velocities[pos_cycler], positions[pos_cycler] = \
+                            get_new_velocity_and_position(velocities[pos_cycler],
+                                                          positions[pos_cycler],
+                                                          lbests[pos_cycler],
+                                                          gbest)
+                        pos_hash = sha256(str(positions[pos_cycler]).encode('utf-8')).hexdigest()
+                    else:
+                        print('too many duplicates, choosing random position')
+                        positions[pos_cycler] = numpyize([np.random.uniform(bounds[0][i], bounds[1][i])
+                                                          for i in range(len(bounds[0]))])
+                        #raise Exception('too many duplicate candidates')
+                    tested.add(pos_hash)
                     workers[worker_cycler] = (pos_cycler, pool.apply_async(reward_func, args=(positions[pos_cycler],)))
                     working = set([e[0] for e in workers if e is not None])
                 pos_cycler = (pos_cycler + 1) % len(positions)
@@ -83,15 +120,11 @@ def pso_multiprocess(reward_func: Callable,
                 lbests[pos_idx], lbest_scores[pos_idx] = positions[pos_idx], score
                 if score < gbest_score:
                     gbest, gbest_score = positions[pos_idx], score
-            velocities[pos_cycler] = (
-                w * velocities[pos_cycler]
-                + c1 * np.random.random(velocities[pos_cycler].shape) * (lbests[pos_cycler] - positions[pos_cycler])
-                + c2 * np.random.random(velocities[pos_cycler].shape) * (gbest - positions[pos_cycler])
-            )
-            positions[pos_cycler] = positions[pos_cycler] + lr * velocities[pos_cycler]
-            positions[pos_cycler] = np.where(positions[pos_cycler] > bounds[0], positions[pos_cycler], bounds[0])
-            positions[pos_cycler] = np.where(positions[pos_cycler] < bounds[1], positions[pos_cycler], bounds[1])
-
+            velocities[pos_cycler], positions[pos_cycler] = \
+                get_new_velocity_and_position(velocities[pos_cycler],
+                                              positions[pos_cycler],
+                                              lbests[pos_cycler],
+                                              gbest)
         worker_cycler = (worker_cycler + 1) % len(workers)
         sleep(0.001)
     return gbest, gbest_score
@@ -106,48 +139,38 @@ class PostProcessing:
         score = -score
         best_score = self.all_backtest_analyses[0][0] if self.all_backtest_analyses else 9e9
         analysis['score'] = score
-        insort(self.all_backtest_analyses, (score, analysis))
+        idx = bisect([e[0] for e in self.all_backtest_analyses], score)
+        self.all_backtest_analyses.insert(idx, (score, analysis))
         to_dump = denumpyize({**analysis, **pack_config(config)})
         f"{len(self.all_backtest_analyses): <5}"
         table = PrettyTable()
-        table.field_names = ['adg', 'bkr_dist', 'eqbal_ratio', 'score', 'shrp', 'hrs_no_fills',
-                             'hrs_no_fills_ss', 'mean_hrs_between_fills']
+        table.field_names = ['adg', 'bkr_dist', 'eqbal_ratio', 'shrp', 'hrs_no_fills',
+                             'hrs_no_fills_ss', 'mean_hrs_btwn_fills', 'n_slices', 'score']
         for elm in self.all_backtest_analyses[:20] + [(score, analysis)]:
             row = [round_dynamic(e, 6)
                    for e in [elm[1]['average_daily_gain'],
                              elm[1]['closest_bkr'],
                              elm[1]['lowest_eqbal_ratio'],
-                             elm[1]['score'],
                              elm[1]['sharpe_ratio'],
                              elm[1]['max_hrs_no_fills'],
                              elm[1]['max_hrs_no_fills_same_side'],
-                             elm[1]['mean_hrs_between_fills']]]
+                             elm[1]['mean_hrs_between_fills'],
+                             elm[1]['completed_slices'],
+                             elm[1]['score']]]
             table.add_row(row)
         output = table.get_string(border=True, padding_width=1)
-        print('\n\n')
+        print(f'\n\n{len(self.all_backtest_analyses)}')
         print(output)
-        with open('tmp/btresults.txt', 'a') as f:
+        with open(config['optimize_dirpath'] + 'results.txt', 'a') as f:
             f.write(json.dumps(to_dump) + '\n')
         if score < best_score:
-            dump_live_config(to_dump, 'tmp/current_best.json')
+            dump_live_config(to_dump, config['optimize_dirpath'] + 'current_best.json')
         return score
 
 
 def get_bounds(ranges: dict) -> tuple:     
     return np.array([np.array([float(v[0]) for k, v in ranges.items()]),
                      np.array([float(v[1]) for k, v in ranges.items()])])
-
-
-def simple_backtest(config, data):
-    sample_size_ms = data[1][0] - data[0][0]
-    max_span_ito_n_samples = int(config['max_span'] * 60 / (sample_size_ms / 1000))
-    fills, info = backtest(pack_config(config), data)
-    _, analysis = analyze_fills(fills, {**config, **{'lowest_eqbal_ratio': info[1], 'closest_bkr': info[2]}},
-                                data[max_span_ito_n_samples][0],
-                                data[-1][0])
-    score = analysis['average_daily_gain'] * min(1.0, analysis['closest_bkr'] / config['minimum_bankruptcy_distance'])
-
-    return score, analysis
 
 
 class BacktestWrap:
@@ -159,7 +182,6 @@ class BacktestWrap:
             if self.expanded_ranges[k][0] == self.expanded_ranges[k][1]:
                 del self.expanded_ranges[k]
         self.bounds = get_bounds(self.expanded_ranges)
-        self.starting_configs = get_starting_configs(config)
     
     def config_to_xs(self, config):
         xs = np.zeros(len(self.bounds[0]))
@@ -176,8 +198,22 @@ class BacktestWrap:
 
     def rf(self, xs):
         config = self.xs_to_config(xs)
-        score, analyses = simple_backtest(config, self.data)
-        return score, analyses, config
+        score, analyses = single_sliding_window_run(config, self.data, do_print=True)
+        analysis = {}
+        for key in ['exchange', 'symbol', 'n_days', 'starting_balance']:
+            analysis[key] = analyses[-1][key]
+        for key in ['average_periodic_gain', 'average_daily_gain', 'adjusted_daily_gain', 'sharpe_ratio']:
+            analysis[key] = np.mean([a[key] for a in analyses])
+        for key in ['final_balance', 'final_equity', 'net_pnl_plus_fees', 'gain', 'profit_sum',
+                    'n_fills', 'n_entries', 'n_closes', 'n_reentries', 'n_initial_entries',
+                    'n_normal_closes', 'n_stop_loss_closes', 'biggest_psize', 'mean_hrs_between_fills',
+                    'mean_hrs_between_fills_long', 'mean_hrs_between_fills_shrt', 'max_hrs_no_fills_long',
+                    'max_hrs_no_fills_shrt', 'max_hrs_no_fills_same_side', 'max_hrs_no_fills']:
+            analysis[key] = np.max([a[key] for a in analyses])
+        for key in ['loss_sum', 'fee_sum', 'lowest_eqbal_ratio', 'closest_bkr']:
+            analysis[key] = np.min([a[key] for a in analyses])
+        analysis['completed_slices'] = len(analyses)
+        return score, analysis, config
 
 
 async def main():
@@ -223,6 +259,8 @@ async def main():
                              config['options']['c1'],
                              config['options']['c2'],
                              config['options']['w'],
+                             n_cpus=config['num_cpus'],
+                             iters=config['iters'],
                              initial_positions=initial_positions,
                              post_processing_func=post_processing.process)
         finally:

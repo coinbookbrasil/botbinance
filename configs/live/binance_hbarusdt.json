@@ -1,5 +1,6 @@
 {"config_name": "binance_hbarusdt_151days_adg1.51%_bkr47.41%",
  "logging_level": 0,
+"allow_sharing_wallet": true,
  "long": {"enabled": true,
           "iprc_MAr_coeffs": [[-0.283898154240387, 0.3893651957464962],
                               [0.3168533555996665, 0.4],

@@ -342,7 +342,7 @@ $RECYCLE.BIN/
 backtests/
 !config/optimize/default.hjson
 !config/backtest/default.hjson
-config/live/where_to_find_configs.txt
+configs/live/where_to_find_configs.txt
 historical_data/
 
 # Config files

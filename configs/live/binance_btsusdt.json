@@ -1,5 +1,6 @@
 {"config_name": "btsusdt_160days_adg1.09%_bkr50.04%",
  "logging_level": 0,
+ "allow_sharing_wallet": true,
  "long": {"enabled": true,
           "iprc_MAr_coeffs": [[-0.10165948751067731, -0.0982006967675997],
                               [-0.020998933993309116, -0.36146537854630134],

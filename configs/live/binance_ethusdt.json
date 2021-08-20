@@ -1,5 +1,6 @@
 {"config_name": "181days_adg0.4%_bkr48%",
  "logging_level": 0,
+ "allow_sharing_wallet": true,
  "long": {"enabled": true,
           "iprc_MAr_coeffs": [[-0.31886214547582004, -0.044649350108518795],
                               [0.22270541302584115, 0.1744127387693044],

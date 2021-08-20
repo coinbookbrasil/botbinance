@@ -1,5 +1,6 @@
 {"config_name": "manausdt_119days_adg1.11%_bkr63.52%",
  "logging_level": 0,
+ "allow_sharing_wallet": true,
  "long": {"enabled": true,
           "iprc_MAr_coeffs": [[-0.020179972549256967, -0.04753088201708571],
                               [-0.03312372650699356, -0.04289787950175045],

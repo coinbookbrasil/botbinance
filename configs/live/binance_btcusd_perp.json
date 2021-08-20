@@ -1,5 +1,6 @@
 {"config_name": "binance_btcusd_perp_197days_adg0.21%_bkr56.01%",
  "logging_level": 0,
+ "allow_sharing_wallet": true,
  "long": {"enabled": true,
           "iprc_MAr_coeffs": [[0.11612378246679204, -0.12772111181628268],
                               [0.3615268900059039, -0.24708855271660227],

@@ -1,5 +1,6 @@
 {"config_name": "binance_xlmusdt_286days_adg0.50%_bkr56.92%",
  "logging_level": 0,
+ "allow_sharing_wallet": true,
  "long": {"enabled": true,
           "iprc_MAr_coeffs": [[0.4, -0.0960750358279621],
                               [-0.354078346914142, 0.2488354793587501],

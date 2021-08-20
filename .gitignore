@@ -349,11 +349,11 @@ historical_data/
 !live_configs/binance_default.json
 !live_configs/bybit_default.json
 live_configs/*
-configs/live/where_to_find_configs.txt
+!configs/live/where_to_find_configs.txt
 update.sh
 master.zip
 
 # Reports
 reports/*
 passivbot-master/
-docs/*
+docs/

@@ -1,5 +1,6 @@
 {"config_name": "binance_aaveusdt_211days_adg0.20%_bkr100.00%",
  "logging_level": 0,
+ "allow_sharing_wallet": true,
  "long": {"enabled": true,
           "iprc_MAr_coeffs": [[-0.073646868311884, -0.39320716508305414],
                               [0.21975317290095264, 0.3970570544074349],

@@ -1,5 +1,6 @@
 {"config_name": "binance_adaupusdt_211days_adg1.36%_bkr99.96%",
  "logging_level": 0,
+ "allow_sharing_wallet": true,
  "long": {"enabled": true,
           "iprc_MAr_coeffs": [[-0.5436562417975105, -0.27734366571991453],
                               [-0.42611065544688703, 0.020324011066050817],

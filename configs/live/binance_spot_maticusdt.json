@@ -1,5 +1,6 @@
 {"config_name": "binance_maticusdt_211days_adg1.56%_bkr99.89%",
  "logging_level": 0,
+ "allow_sharing_wallet": true,
  "long": {"enabled": true,
           "iprc_MAr_coeffs": [[-0.14335040793910858, -0.22256972315327236],
                               [-0.2657814911385486, -0.2995960488245194],

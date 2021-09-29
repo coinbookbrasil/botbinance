@@ -1,13 +1,48 @@
- {
-    "name": "passivbot",
-    "description": "Trading bot running on Bybit and Binance Futures",
-    "logo": "https://github.com/enarjord/passivbot/raw/master/docs/images/logo.png",
-    "repository": "https://github.com/enarjord/passivbot",
-	"formation": {
+{
+  "name": "passivbot",
+  "description": "Trading bot running on Bybit and Binance Futures",
+  "logo": "https://github.com/enarjord/passivbot/raw/master/docs/images/logo.png",
+  "repository": "https://github.com/enarjord/passivbot",
+  "formation": {
     "worker": {
       "quantity": 1,
       "size": "free"
     }
-	},
-    "keywords": ["python", "binance","trading","trader","bot","market","maker","algo","crypto"]
- }
+  },
+  "keywords": [
+    "python",
+    "binance",
+    "trading",
+    "trader",
+    "bot",
+    "market",
+    "maker",
+    "algo",
+    "crypto"
+  ],
+  "env": {
+    "EXCHANGE": {
+      "description": "Exchange",
+      "required": true,
+      "value": "binance_01"
+    },
+    "KEY": {
+      "description": "API KEY",
+      "required": true
+    },
+    "SECRET": {
+      "description": "API SECRET",
+      "required": true
+    },
+    "CHAT_ID": {
+      "description": "Telegram CHAT_ID",
+      "required": true,
+      "value": "Get id https://t.me/raw_data_bot"
+    },
+    "TOKEN": {
+      "description": "Telegram TOKEN",
+      "required": true,
+      "value": "Create bot https://t.me/BotFather"
+    }
+  }
+}

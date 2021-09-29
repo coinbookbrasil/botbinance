@@ -1,22 +1,22 @@
 {
-    "binance_01" : {
+    "binance_01": {
         "exchange": "binance",
         "key": "key",
         "secret": "secret",
         "telegram": {
-            "enabled": false,
+            "enabled": true,
             "notify_entry_fill": true,
             "notify_close_fill": true,
-            "token": "bot_token",
+            "token": "token",
             "chat_id": "chat_id"
         }
     },
-    "binance_02" : {
+    "binance_02": {
         "exchange": "binance",
         "key": "key",
         "secret": "secret"
     },
-    "bybit_01" : {
+    "bybit_01": {
         "exchange": "bybit",
         "key": "key",
         "secret": "secret"

@@ -1,1 +1,1 @@
-worker: python3 start_bot.py binance_01 XMRUSDT configs/live/binance_xmrusdt.json
+worker: python3 start_bot.py binance_01 MATICUSDT configs/live/binance_spot_maticusdt.json -m spot
